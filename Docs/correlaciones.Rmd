@@ -1,0 +1,51 @@
+
+
+# Descripción de los datos
+En primer lugar, para trabajar de manera cómoda con la base de datos, es necesario contar con un diagrama Entidad-Relación de esta. Así es posible realizar una inspección visual de las tablas de manera compacta y hacerse una idea del entorno sobre el cuál se trabaja. Para crear este diagrama, se hizo uso de un software llamado [DB Browser for SQLite](https://sqlitebrowser.org/) que permite convertir ficheros de extensión *.db* a ficheros con instrucciones SQL para recrear esta base de datos en cualquier sistema que permita dicho lenguaje. Dentro de este programa, se abrió el archivo ```compas.db``` para luego exportarlo en formato SQL.
+
+Obtenido un archivo ```compas.sql```, se hace uso de un segundo software: [MySQL Workbench](https://www.mysql.com/products/workbench/). Este permite leer archivos de extensión *.sql* para generar una nueva base de datos. Para continuar el proceso, dentro del programa se debe crear un nuevo modelo para posteriormente importar el nuevo archivo generado anteriormente. Al hacerlo, se genera automáticamente un diagrama de Entidad-Relación, este se muestra a continuación:
+![Diagrama E-R](compas_ER_model.png)
+
+Es necesario mencionar que las instrucciones SQL del archivo generado con la herramienta *DB Browser* no cuentan con un máximo de caracteres para las columnas de tipo *VARCHAR* por lo que se debe editar manualmente para añadir un máximo de caracteres como sigue: *VARCHAR(255)*. A partir de este diagrama, es posible identificar que la tabla **people** (relativa a las personas) es la columna vertebral de esta base de datos. Alrededor de esta tabla, se pueden encontrar seis más ("compas", "jailhistory", "casearrest, "summary", "prisonhistory" y "charge") con distintos atributos que pertenecen a una persona en específico (notar la llave foránea al id de una persona), estos datos serán analizados posteriormente.
+
+
+# Exploración de datos
+
+A modo de hacer el informe replicable, se deja explícito el código fuente utilizado. Para trabajar con ```compas.db``` se comienza importando las librerías requeridas, importando el fichero de la base de datos a través de una clase de SQL manejable por R para posteriormente extraer los dataframes del mismo.
+```{r, results="hide"}
+library(RSQLite)
+
+filename <- "compas.db"
+sqlite.driver <- dbDriver("SQLite")
+db <- dbConnect(sqlite.driver, dbname = filename)
+
+casearrest    <- dbReadTable(db,"casearrest")
+charge        <- dbReadTable(db,"charge")
+compas        <- dbReadTable(db,"compas")
+jailhistory   <- dbReadTable(db,"jailhistory")
+prisonhistory <- dbReadTable(db,"prisonhistory")
+summary       <- dbReadTable(db,"summary")
+people        <- dbReadTable(db,"people")
+```
+
+
+
+
+
+
+
+
+
+
+A continuación se exhiben algunos valores que muestran la correlación de diversos datos que pueden resultar de interés. Un valor de correlación se expresa como la forma de medir la dependencia entre dos variables (X,Y) y como es que una de ellas se comportaría al hacer variar la otra. De esta forma, mientras este valor esté muy cercano a 1, se dice que los datos están fuertemente correlacionados, su proporción es casi directa. Por otro lado, si se acerca mucho a -1 , quiere decir que los datos son demasiado correlacionados inversamente. Para valores cercanos a 0, se dice que la relación entre los datos es casi nula. Y no existe relación alguna si este valor es igual a 0.
+
+```{r}
+compas_violence = merge(compas[compas$scale_id == 7, ], people, by.x = "person_id", by.y = "id")
+compas_recidivism = merge(compas[compas$scale_id == 8, ], people, by.x = "person_id", by.y = "id")
+compas_failure_appear = merge(compas[compas$scale_id == 18, ], people, by.x = "person_id", by.y = "id")
+
+cor(people$age, people$decile_score)
+```
+
+Se separaron los puntajes de compas entre los tres distintos podibles: *Risk of Violence*, *Risk of Recidivism* y *Risk of Failure to Appear*. Luego se hizo uso de la función *cor* de R donde se analizó la correlación entre distintas variables, tales como: edad, sexo, raza o si ha sido reincidente con o sin violencia
+
