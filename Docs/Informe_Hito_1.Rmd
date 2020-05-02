@@ -18,9 +18,18 @@ Un [estudio](https://www.propublica.org/article/machine-bias-risk-assessments-in
 
 # Problemática central
 
-El objetivo de este proyecto es analizar y detectar los posibles sesgos que tenga COMPAS en un espectro más amplio de atributos además de verificar el sesgo racial descrito por el informe de ProPublica. Adicional a esto se busca determinar una forma de disminuir los sesgos detectados o determinar la imposibilidad de realizar lo anterior.
+La problematica a abordar en este proyecto se basa en el análisis de datos del dataset "compas", principalmente al estudio efectuado por ProPublica que revela una serie de sesgos que son identificables en la metodologia de estimación para predecir la probabilidad de reincidencia de un criminal debido a estos datos es necesario un análisis para poder identificar datos relevantes.
 
-Para cumplir este objetivo se trabaja con el dataset principal publicado en el repositorio contenido en el fichero ```compas.db``` que corresponde a una base de datos de sqlite3. Esta se importa en R y utilizando esta herramienta, se hace un análisis de datos, eventualmente una limpieza y reducción de atributos para comenzar a analizar correlaciones que se puedan encontrar, los atributos que se consideran de interés corresponden a la etnia (raza) y género de las personas. En base a correlaciones de interés encontradas, se aplicarán herramientas de minería de datos más sofisticadas en los próximos hitos del proyecto.
+El objetivo de este proyecto es analizar y detectar los posibles sesgos que tenga COMPAS en un espectro más amplio de atributos además de verificar el sesgo racial descrito por el informe de ProPublica. Adicional a esto se busca determinar una forma de disminuir los sesgos detectados o determinar la imposibilidad de realizar lo anterior mediante la exploración de los datos correspondientes en el hito 1.
+
+Para esto se pretende abordar en tornos a los datos, las correlaciones entres los distintos atributos como indice de reinicidencia, raza, sexo, rango de edad, etc. Esto permitira encontrar sesgos que podran ser los mismo presentados por ProPublica y/o otros. Para cumplir este objetivo se trabaja con el dataset principal publicado en el repositorio contenido en el fichero ```compas.db``` que corresponde a una base de datos de sqlite3. Esta se importa en R y utilizando esta herramienta, se hace un análisis de datos, eventualmente una limpieza y reducción de atributos para comenzar a analizar correlaciones que se puedan encontrar, los atributos que se consideran de interés corresponden a la etnia (raza) y género de las personas. En base a correlaciones de interés encontradas, se aplicarán herramientas de minería de datos más sofisticadas en los próximos hitos del proyecto.
+
+Otras formas de encontrar relaciones y explorar los datos para el hito 1, sera relacionar las salidas del sistema con las variables de entrada, tambien podemos definir relaiones de interdependencia entre las variables que componen el dataset.
+
+# Descripción de los datos 
+
+El dataset compas analizado en el siguiente informe, esta dividido bloques distintos que son tiene al dataframe "people" como nodo central del cual se despreden 6 ramas correspondientes a los siguientes dataframe: "compas", "jailhistory", "casearrest", "people", "summary", "prisonhistory" y "charge". Cada bloque esta compuesto por una serie de atributos.
+
 
 # Exploración de datos
 
