@@ -28,15 +28,6 @@ summary       <- dbReadTable(db,"summary")
 people        <- dbReadTable(db,"people")
 ```
 
-
-
-
-
-
-
-
-
-
 A continuación se exhiben algunos valores que muestran la correlación de diversos datos que pueden resultar de interés. Un valor de correlación se expresa como la forma de medir la dependencia entre dos variables (X,Y) y como es que una de ellas se comportaría al hacer variar la otra. De esta forma, mientras este valor esté muy cercano a 1, se dice que los datos están fuertemente correlacionados, su proporción es casi directa. Por otro lado, si se acerca mucho a -1 , quiere decir que los datos son demasiado correlacionados inversamente. Para valores cercanos a 0, se dice que la relación entre los datos es casi nula. Y no existe relación alguna si este valor es igual a 0.
 
 ```{r}

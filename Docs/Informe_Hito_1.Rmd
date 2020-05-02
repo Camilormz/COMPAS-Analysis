@@ -28,8 +28,13 @@ Otras formas de encontrar relaciones y explorar los datos para el hito 1, sera r
 
 # Descripción de los datos 
 
-El dataset compas analizado en el siguiente informe, esta dividido bloques distintos que son tiene al dataframe "people" como nodo central del cual se despreden 6 ramas correspondientes a los siguientes dataframe: "compas", "jailhistory", "casearrest", "people", "summary", "prisonhistory" y "charge". Cada bloque esta compuesto por una serie de atributos.
+En primer lugar, para trabajar de manera cómoda con la base de datos, es necesario contar con un diagrama Entidad-Relación de esta. Así es posible realizar una inspección visual de las tablas de manera compacta y hacerse una idea del entorno sobre el cuál se trabaja. Para crear este diagrama, se hizo uso de un software llamado [DB Browser for SQLite](https://sqlitebrowser.org/) que permite convertir ficheros de extensión *.db* a ficheros con instrucciones SQL para recrear esta base de datos en cualquier sistema que permita dicho lenguaje. Dentro de este programa, se abrió el archivo ```compas.db``` para luego exportarlo en formato SQL.
 
+Obtenido un archivo ```compas.sql```, se hace uso de un segundo software: [MySQL Workbench](https://www.mysql.com/products/workbench/). Este permite leer archivos de extensión *.sql* para generar una nueva base de datos. Para continuar el proceso, dentro del programa se debe crear un nuevo modelo para posteriormente importar el nuevo archivo generado anteriormente. Al hacerlo, se genera automáticamente un diagrama de Entidad-Relación, este se muestra a continuación:
+
+![Diagrama de Entidad-Relación generado por MySQL Wekbench](compas_ER_model.png)
+
+Es necesario mencionar que las instrucciones SQL del archivo generado con la herramienta *DB Browser* no cuentan con un máximo de caracteres para las columnas de tipo *VARCHAR* por lo que se debe editar manualmente para añadir un máximo de caracteres como sigue: *VARCHAR(255)*. A partir de este diagrama, es posible identificar que la tabla **people** (relativa a las personas) es la columna vertebral de esta base de datos. Alrededor de esta tabla, se pueden encontrar seis más ("compas", "jailhistory", "casearrest, "summary", "prisonhistory" y "charge") con distintos atributos que pertenecen a una persona en específico (notar la llave foránea al id de una persona), estos datos serán analizados posteriormente.
 
 # Exploración de datos
 
@@ -48,4 +53,197 @@ jailhistory   <- dbReadTable(db,"jailhistory")
 prisonhistory <- dbReadTable(db,"prisonhistory")
 summary       <- dbReadTable(db,"summary")
 people        <- dbReadTable(db,"people")
+```
+
+A continuación se exhiben algunos valores que muestran la correlación de diversos datos que pueden resultar de interés. Un valor de correlación se expresa como la forma de medir la dependencia entre dos variables (X,Y) y como es que una de ellas se comportaría al hacer variar la otra. De esta forma, mientras este valor esté muy cercano a 1, se dice que los datos están fuertemente correlacionados, su proporción es casi directa. Por otro lado, si se acerca mucho a -1 , quiere decir que los datos son demasiado correlacionados inversamente. Para valores cercanos a 0, se dice que la relación entre los datos es casi nula. Y no existe relación alguna si este valor es igual a 0.
+
+```{r}
+compas_violence = merge(compas[compas$scale_id == 7, ], people, by.x = "person_id", by.y = "id")
+compas_recidivism = merge(compas[compas$scale_id == 8, ], people, by.x = "person_id", by.y = "id")
+compas_failure_appear = merge(compas[compas$scale_id == 18, ], people, by.x = "person_id", by.y = "id")
+
+cor(people$age, people$decile_score)
+```
+
+Se separaron los puntajes de compas entre los tres distintos podibles: *Risk of Violence*, *Risk of Recidivism* y *Risk of Failure to Appear*. Luego se hizo uso de la función *cor* de R donde se analizó la correlación entre distintas variables, tales como: edad, sexo, raza o si ha sido reincidente con o sin violencia.
+
+Escribimos la ubicación del archivo compas.db
+Utilizamos los drivers instalados de SQLite para poder pasar el archivo a un data.frame que puede ser manipulado por R.
+```{r}
+filename <- "compas.db"
+sqlite.driver <- dbDriver("SQLite")
+db <- dbConnect(sqlite.driver,
+                dbname = filename)
+```
+
+El objeto db contiene las 7 tablas que pertenecen a compas.
+Para obtener un dataframe con alguna de las tablas, vasta con descomentar la linea que lee una tabla.
+
+```{r}
+dbListTables(db)
+# tabla_compas <- dbReadTable(db,"people")
+```
+
+
+Le damos nombres a los distintos dataframe
+1. People
+```{r}
+people <- dbReadTable(db,"people")
+head(people)
+```
+Vemos el tamaño del dataframe 
+```{r}
+# Para indicar el número de filas y columnas de d
+dim(people)
+```
+Atributos de dataframe
+```{r}
+str(people)
+```
+Estadisticas 
+```{r}
+summary(people)
+```
+# Consultas sobre data frames (proyección y filtro)
+Analizando algunos parametro del dataframe "people"
+```{r}
+people[order(people$age),]
+```
+# Graficando 
+Fitrar de acuerdo a las hombre con edad de 18 años, ver su raza y su puntaje 
+```{r}
+head(people[people$sex=="Female", c("race","decile_score")])
+```
+Fitrar de acuerdo a las mujeres, ver su raza y su puntaje 
+De acuerdo al grafico vemos una clara tendencia de raza afroamericana con mayor puntaje 
+```{r}
+peopleFemale <- people[people$sex == "Female", ]
+head(peopleFemale)
+library(ggplot2)
+ggplot(peopleFemale) +   # asociamos un data frame a ggplot
+  geom_bar(aes(x = race, y = decile_score), stat="identity") +   # creamos un grafico de barras como una capa
+  coord_flip() +  # transformamos el grafico invirtiendo los ejes de coordenadas (sólo visualmente)
+  ggtitle("Distribución de mujeres de acuerdo a su raza y su puntaje") + # título
+  xlab("Race") + ylab("Score")  
+```
+Se puede encontrar una correlación entre la raza y su puntaje, lo que nos muestra el grafico es que la raza African-American y Caucasian son maypritarias en las mujeres.
+```{r}
+peopleFemale <- people[people$sex == "Female", ]
+head(peopleFemale)
+library(ggplot2)
+ggplot(peopleFemale) +   # asociamos un data frame a ggplot
+  geom_bar(aes(x = race, y = is_violent_recid), stat="identity") +   # creamos un grafico de barras como una capa
+  coord_flip() +  # transformamos el grafico invirtiendo los ejes de coordenadas (sólo visualmente)
+  ggtitle("Distribución de mujeres de acuerdo a su raza y su indice violencia ") + # título
+  xlab("Race") + ylab("Violent")  
+```
+```{r}
+peopleAfromaerican <- people[people$race == "African-American", ]
+head(peopleAfromaerican)
+library(ggplot2)
+ggplot(peopleAfromaerican) +   # asociamos un data frame a ggplot
+  geom_bar(aes(x = age, y = decile_score), stat="identity") +   # creamos un grafico de barras como una capa
+  coord_flip() +  # transformamos el grafico invirtiendo los ejes de coordenadas (sólo visualmente)
+  ggtitle("Distribución de afroamericanos de acuerdo a su edad y puntaje") + # título
+  xlab("Age") + ylab("Score")  
+```
+Hay una correlación entre la edad y el puntaje para la raza African-American, donde podemos notar que a menor edad mayor puntaje, pero en una concentración.
+
+```{r}
+peopleAge <- people[people$age < "30", ]
+head(peopleAge)
+library(ggplot2)
+ggplot(peopleAge) +   # asociamos un data frame a ggplot
+  geom_bar(aes(x = sex, y = decile_score), stat="identity") +   # creamos un grafico de barras como una capa
+  coord_flip() +  # transformamos el grafico invirtiendo los ejes de coordenadas (sólo visualmente)
+  ggtitle("Distribución de personas menores de 30 años y puntaje") + # título
+  xlab("Sex") + ylab("Score")  
+```
+Este grafico nos muestra una correlacion entre las personas menores de 30 que su puntaje es mayor para el sexo masculino.
+Grafico densidad de edad
+Podemos ver que se concentran las edades mas jovenes
+Distribución de edad en la gente que ha sido encuestada
+```{r}
+plot(density(people$age))
+```
+Este grafico nos muestra la densidad de la edad de las personas y nos muestra una relacion de la concentracion de edad
+
+Grafico de densidad del puntaje del compas 
+```{r}
+plot(density(people$decile_score))
+```
+Este grafico nos muestra la densidad de puntaje de las personas y nos muestra la concentracion del puntaje siendo mayoritario entre 0 y 2
+Por ggplot
+
+2. Casearrest
+```{r}
+casearrest <- dbReadTable(db,"casearrest")
+head(casearrest)
+```
+Vemos el tamaño del dataframe
+```{r}
+# Para indicar el número de filas y columnas de d
+dim(casearrest)
+```
+
+3. charge
+```{r}
+charge <- dbReadTable(db,"charge")
+head(charge)
+```
+
+4. compas
+```{r}
+compas <- dbReadTable(db,"compas")
+head(compas)
+```
+```{r}
+peopleAge <- compas
+library(ggplot2)
+ggplot(compas) +   # asociamos un data frame a ggplot
+  geom_bar(aes(x = marital_status, y = decile_score), stat="identity") +   # creamos un grafico de barras como una capa
+  coord_flip() +  # transformamos el grafico invirtiendo los ejes de coordenadas (sólo visualmente)
+  ggtitle("Distribución de estado civil y puntaje") + # título
+  xlab("Estado civil") + ylab("Score")  
+```
+```{r}
+peopleAge <- compas
+library(ggplot2)
+ggplot(compas) +   # asociamos un data frame a ggplot
+  geom_bar(aes(x = type_of_assessment, y = decile_score), stat="identity") +   # creamos un grafico de barras como una capa
+  coord_flip() +  # transformamos el grafico invirtiendo los ejes de coordenadas (sólo visualmente)
+  ggtitle("Distribución de tipificacion de evaluación y puntaje") + # título
+  xlab("Tipificación de la evaluación") + ylab("Score")  
+```
+```{r}
+peopleAge <- compas
+library(ggplot2)
+ggplot(compas) +   # asociamos un data frame a ggplot
+  geom_bar(aes(x = score_text, y = decile_score), stat="identity") +   # creamos un grafico de barras como una capa
+  coord_flip() +  # transformamos el grafico invirtiendo los ejes de coordenadas (sólo visualmente)
+  ggtitle("Relación de la tipificacion del puntaje y el puntaje") + # título
+  xlab("Tipificación score") + ylab("Score")  
+```
+5. jailhistory
+```{r}
+jailhistory <- dbReadTable(db,"jailhistory")
+head(jailhistory)
+```
+6. prisonhistory
+```{r}
+prisonhistory <- dbReadTable(db,"prisonhistory")
+head(prisonhistory)
+```
+7. summary
+```{r}
+summary <- dbReadTable(db,"summary")
+head(summary)
+```
+
+
+Realizamos exploración de datos 
+Numero de filas
+```{r}
+# Para indicar el número de filas de d.
+nrow(db)
 ```
