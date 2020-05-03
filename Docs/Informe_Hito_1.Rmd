@@ -95,14 +95,34 @@ summary(people$decile_score)
 Considerando estas categorías, se hace un breve análisis etáreo de los puntajes:
 ```{r}
 plot(people$decile_score, people$age,
-     xlab="Puntaje asignado por COMPAS",ylab="Edad (años)")
+     xlab="Puntaje asignado por COMPAS",ylab="Edad (años)",
+     main="Relación de puntaje y edad asignados por COMPAS")
 ```
 Lo que muestra una leve correlación donde a medida que aumenta el puntaje COMPAS disminuye la edad, esto se puede corroborar con la función de correlación:
 ```{r}
 cor(people$age, as.numeric(people$decile_score))
 ```
+De la misma forma se hace un análisis por sexo de los puntajes.
+```{r}
+plot(table(people$decile_score,people$sex),
+     xlab="Puntaje COMPAS",ylab="Sexo",
+     main="Relación de sexo en los puntajes")
 
-<!-- A continuación se exhiben algunos valores que muestran la correlación de diversos datos que pueden resultar de interés. Un valor de correlación se expresa como la forma de medir la dependencia entre dos variables (X,Y) y como es que una de ellas se comportaría al hacer variar la otra. De esta forma, mientras este valor esté muy cercano a 1, se dice que los datos están fuertemente correlacionados, su proporción es casi directa. Por otro lado, si se acerca mucho a -1 , quiere decir que los datos son demasiado correlacionados inversamente. Para valores cercanos a 0, se dice que la relación entre los datos es casi nula. Y no existe relación alguna si este valor es igual a 0. -->
+```
+Finalmente focalizado a lo estudiado por ProPublica, se genera una tabla de contingencia en relación a los puntajes COMPAS y la raza.
+```{r}
+table(people$race,people$decile_score)
+```
+Notar que la muestra de asiaticos y nativos americanos es mínima, por ende se deciden descartar de al obserbación de puntajes a nivel racial, asimismo aquellas personas en la categoría *others* ya que no se aporta información clarificadora. Considerado esto se hace un gráfico.
+```{r}
+reducedPeople <- people[people$race=="African-American"|people$race=="Caucasian"|people$race=="Hispanic",]
+reducedPeople$race <- factor(reducedPeople$race)
+
+plot(table(reducedPeople$decile_score, reducedPeople$race),
+     xlab="Puntaje COMPAS",ylab="Raza",
+     main="Relación de raza en los puntajes",las=1)
+```
+En el gráfico mostrado es notable la diferencia de proporción entre las razas a medida que aumentan los puntajes, en el caso de la gente hispana, se presenta una leve baja a medida que aumenta el puntaje, el principal contraste lo presenta entre las personas caucásicas y afro-americanas, donde se puede ver con claridad que el algoritmo les asignó en general un puntaje significativamente mayor que a las personas caucásicas, las que dominan los puntajes menores.
 
 ```{r}
 compas_violence = merge(compas[compas$scale_id == 7, ], people, by.x = "person_id", by.y = "id")
