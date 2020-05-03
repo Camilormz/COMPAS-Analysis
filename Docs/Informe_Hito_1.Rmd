@@ -111,3 +111,16 @@ compas_failure_appear = merge(compas[compas$scale_id == 18, ], people, by.x = "p
 ```
 
 Se separaron los puntajes de compas entre los tres distintos podibles: *Risk of Violence*, *Risk of Recidivism* y *Risk of Failure to Appear*. Luego se hizo uso de la función *cor* de R donde se analizó la correlación entre distintas variables, tales como: edad, sexo, raza o si ha sido reincidente con o sin violencia.
+
+# Conclusión
+
+Se observa que dada la exploración de datos realizada en el hito 1 se pudieron definir correlaciones entre las variables de entrada y además se pudo establecer dependencias entre ellas. Como trabajo propuesto para el hito 2 sería encontrar otra forma de medir el sesgo dentro del dataset, por otro lado hacer un clasificador que sea capaz de predecir los campos de entrada a partir de la salida y finalmente predecir variables ocultas.
+
+El objetivo del hito 1 es mediante una exploración de datos entender y trabajar con los datos para buscar posibles hipótesis a preguntas que se iran respondiendo en los siguientes hitos del proyecto.
+
+En este trabajo tuvo algunos incovenientes como la salida de dos alummnos del proyecto lo que dificulto la distribución del trabajo y la carga de trabajo que cada integrante realizó.
+
+La distribución de trabajo fue la siguiente:
+Ignacia Aguilera: redactó la problematica central y la conclusión. Además realizó parte de la exploración de datos realizando los graficos presentados.
+Camilo Ramírez: redactó la introducción, descripción de los datos y se encargo de la limpieza de la exploración de datos.
+Sebastián Zapata: se encargó de realizar la exploración de datos encontrando correlaciones y realizó el diagrama Entidad - Relación
