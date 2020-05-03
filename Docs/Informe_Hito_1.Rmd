@@ -102,7 +102,12 @@ Lo que muestra una leve correlación donde a medida que aumenta el puntaje COMPA
 ```{r}
 cor(people$age, as.numeric(people$decile_score))
 ```
-De la misma forma se hace un análisis por sexo de los puntajes.
+Tambien es posible observar la distribución de edades del dataset, esto con un gráfico de densidad.
+```{r}
+plot(density(people$age),xlab="Edad (años)",
+     main="Distribución de densidad de las edades en el dataset")
+```
+Evidentemente existe una concentración de población joven en el dataset. Por otro lado, se hace un análisis por sexo de los puntajes.
 ```{r}
 plot(table(people$decile_score,people$sex),
      xlab="Puntaje COMPAS",ylab="Sexo",
@@ -122,25 +127,23 @@ plot(table(reducedPeople$decile_score, reducedPeople$race),
      xlab="Puntaje COMPAS",ylab="Raza",
      main="Relación de raza en los puntajes",las=1)
 ```
-En el gráfico mostrado es notable la diferencia de proporción entre las razas a medida que aumentan los puntajes, en el caso de la gente hispana, se presenta una leve baja a medida que aumenta el puntaje, el principal contraste lo presenta entre las personas caucásicas y afro-americanas, donde se puede ver con claridad que el algoritmo les asignó en general un puntaje significativamente mayor que a las personas caucásicas, las que dominan los puntajes menores.
-
+Finalmente, y a modo resumen, se incluye una gráfica que cuantifica la totalidad de personas a las que se le asignó determinado puntaje según e algoritmo de COMPAS.
 ```{r}
-compas_violence = merge(compas[compas$scale_id == 7, ], people, by.x = "person_id", by.y = "id")
-compas_recidivism = merge(compas[compas$scale_id == 8, ], people, by.x = "person_id", by.y = "id")
-compas_failure_appear = merge(compas[compas$scale_id == 18, ], people, by.x = "person_id", by.y = "id")
+barplot(table(as.numeric(factor(people$decile_score,exclude=-1))),
+        xlab="Puntaje de COMPAS",ylab="Cantidad de personas",
+        main="Cantidad de personas por puntaje de COMPAS")
 ```
-
-Se separaron los puntajes de compas entre los tres distintos podibles: *Risk of Violence*, *Risk of Recidivism* y *Risk of Failure to Appear*. Luego se hizo uso de la función *cor* de R donde se analizó la correlación entre distintas variables, tales como: edad, sexo, raza o si ha sido reincidente con o sin violencia.
 
 # Conclusión
 
-Se observa que dada la exploración de datos realizada en el hito 1 se pudieron definir correlaciones entre las variables de entrada y además se pudo establecer dependencias entre ellas. Como trabajo propuesto para el hito 2 sería encontrar otra forma de medir el sesgo dentro del dataset, por otro lado hacer un clasificador que sea capaz de predecir los campos de entrada a partir de la salida y finalmente predecir variables ocultas.
+Respecto a la exploración de datos realizada en este hito, se puede ver una correlación de puntajes con la edad y la raza de las personas. Como eventual trabajo propuesto para el segundo hito del proyecto, queda establecer una métrica del sesgo en el dataset observando según los datos de reincidencia los falsos negativos y falsos positivos, por otro lado hacer un clasificador que sea capaz de predecir los campos de entrada a partir de la salida y finalmente predecir variables ocultas.
 
-El objetivo del hito 1 es mediante una exploración de datos entender y trabajar con los datos para buscar posibles hipótesis a preguntas que se iran respondiendo en los siguientes hitos del proyecto.
+Respecto al objetivo de este hito, este se considera en general cumplido, ya que se logó obtener información suficiente para focalizar la búsqueda de sesgos en un análisis de mayor profundidad, además que se verificaron los resultados del estudio realizado por ProPublica
 
-En este trabajo tuvo algunos incovenientes como la salida de dos alummnos del proyecto lo que dificulto la distribución del trabajo y la carga de trabajo que cada integrante realizó.
+El desarrollo de hito 1 presentó inconvenientes, en particular la salida de dos alumnos del proyecto lo que dificultó la distribución del trabajo y la carga que cada integrante tuvo que abordar.
 
-La distribución de trabajo fue la siguiente:
-Ignacia Aguilera: redactó la problematica central y la conclusión. Además realizó parte de la exploración de datos realizando los graficos presentados.
-Camilo Ramírez: redactó la introducción, descripción de los datos y se encargo de la limpieza de la exploración de datos.
-Sebastián Zapata: se encargó de realizar la exploración de datos encontrando correlaciones y realizó el diagrama Entidad - Relación
+***La distribución de trabajo por integrante fue la siguiente:***<br>
+**Ignacia Aguilera**: Redactó la problemática central y la conclusión, además de la generación de grádicas en la exploración de datos, en particular graficas de resumen de datos.<br>
+**Camilo Ramírez**: Redactó la introducción y motivación, realizó la importación, limpieza y descripción de los datos, así como la descripción de atributos y la generación de tablas de contingencia y gráficas de correlación, en particular de puntaje-sexo y puntaje-raza. <br>
+
+**Sebastán Zapata** *(abandonó el proyecto durante su transcurso)*: Se encargó de realizar el análisis de Entidad-Relación del database, generando el diagrama E-R presente en el mismo.
