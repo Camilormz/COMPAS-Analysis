@@ -39,211 +39,75 @@ Es necesario mencionar que las instrucciones SQL del archivo generado con la her
 # Exploración de datos
 
 A modo de hacer el informe replicable, se deja explícito el código fuente utilizado. Para trabajar con ```compas.db``` se comienza importando las librerías requeridas, importando el fichero de la base de datos a través de una clase de SQL manejable por R para posteriormente extraer los dataframes del mismo.
-```{r, results="hide"}
+```{r, results = "hold", results="hide"}
 library(RSQLite)
 
 filename <- "compas.db"
 sqlite.driver <- dbDriver("SQLite")
 db <- dbConnect(sqlite.driver, dbname = filename)
 
+people        <- dbReadTable(db,"people")
 casearrest    <- dbReadTable(db,"casearrest")
 charge        <- dbReadTable(db,"charge")
 compas        <- dbReadTable(db,"compas")
 jailhistory   <- dbReadTable(db,"jailhistory")
 prisonhistory <- dbReadTable(db,"prisonhistory")
 summary       <- dbReadTable(db,"summary")
-people        <- dbReadTable(db,"people")
 ```
 
-A continuación se exhiben algunos valores que muestran la correlación de diversos datos que pueden resultar de interés. Un valor de correlación se expresa como la forma de medir la dependencia entre dos variables (X,Y) y como es que una de ellas se comportaría al hacer variar la otra. De esta forma, mientras este valor esté muy cercano a 1, se dice que los datos están fuertemente correlacionados, su proporción es casi directa. Por otro lado, si se acerca mucho a -1 , quiere decir que los datos son demasiado correlacionados inversamente. Para valores cercanos a 0, se dice que la relación entre los datos es casi nula. Y no existe relación alguna si este valor es igual a 0.
+Es posible además mostrar el tamaño de cada Dataframe:
+```{r, collapse=TRUE}
+dim1 <- paste(" casearrest rows:", dim(casearrest)[1],"; cols:", dim(casearrest)[2],"\n")
+dim2 <- paste("charge rows:", dim(charge)[1],"; cols:", dim(charge)[2],"\n")
+dim3 <- paste("compas rows:", dim(compas)[1],"; cols:", dim(compas)[2],"\n")
+dim4 <- paste("jailhistory rows:", dim(jailhistory)[1],"; cols:", dim(jailhistory)[2],"\n")
+dim5 <- paste("prisonhistory rows:", dim(prisonhistory)[1],"; cols:", dim(prisonhistory)[2],"\n")
+dim6 <- paste("summary rows:", dim(summary)[1],"; cols:", dim(summary)[2],"\n")
+dim7 <- paste("people rows:", dim(people)[1],"; cols:", dim(people)[2],"\n")
+cat(paste(dim1,dim2,dim3,dim4,dim5,dim6,dim7))
+```
+Dado que la relación *summary* no tiene ninguna tupla, se descarta trbajar con ella, por otro lado, se sabe que la relación central del database corresponde a *people*, por lo que conviene enlistar y obtener un extracto de sus atributos.
+```{r}
+str(people)
+```
+En base a lo observado se pueden analizar los atributos y eventualmente reducir la dimensionalidad de los datos.
+
+- ```id``` es la llave primaria de la relación, permite identificar a una única persona
+- ```name```, ```first``` y ```last``` tienen relación con el nombre de las personas, dado que estas ya son identificables por ```id```, estas relaciones son prescindibles.
+- ```sex``` y ```race``` corresponden al sexo y raza de las personas y son atributos demográficos categóricos de interés y donde se centró el análisis realizado por ProPublica.
+- ```dob``` *(date of birth)*, ```age``` y ```age_cat``` son atributos que tienen relacion con la edad de las personas, en particular ```dob``` aporta su fecha de nacimiento, con lo que se pueden inferir los otros dos, aún así, para el análisis que se desea realizar basta conservar el atributo ```age```.
+- ```juv_fel_count``` *(juvenile fellonies count)*, ```juv_misd_count``` *(juvenile misdemeanor count)*, ```juv_other_count``` corresponden a atributos que cuentan la cantidad de delitos graves *(fellonies)*, menores *(misdemeanor)* u otros que cometió una persona durante su juventud.
+- ```compas_screening_date``` corresponde a la fecha en la que se calculó el puntaje de esta persona con COMPAS, a efectos del análisis de sesgos, se considera irrelevante.
+- ```decile_score``` corresponde a la asignación numérica del puntaje, mientras en el dataset ```score_text``` solo arroja valores NA (verificable con ```people[!is.na(people$score_text), ]```).
+El resto de los atributos corresponden a detalles respecto a su reclusión tanto en su caso original como en aquel que reincidieron posterior a su liberación condicional, respecto a esto hay un atributo de importancia, que corresponde a:
+- ```is_recid```, indica si existe reincidencia en la persona analizada por COMPAS, adquiere valor ```-1``` en caso de no haber.
+
+Para comprender la demografía involucrada, a continuación se enlistan los atributos de sexo y raza y se asignan como factores categoricos junto al puntaje.
+```{r}
+people$sex <- as.factor(people$sex)
+people$race <- as.factor(people$race)
+people$decile_score <- as.factor(people$decile_score)
+
+summary(people$sex)
+summary(people$race)
+summary(people$decile_score)
+```
+Considerando estas categorías, se hace un breve análisis etáreo de los puntajes:
+```{r}
+plot(people$decile_score, people$age,
+     xlab="Puntaje asignado por COMPAS",ylab="Edad (años)")
+```
+Lo que muestra una leve correlación donde a medida que aumenta el puntaje COMPAS disminuye la edad, esto se puede corroborar con la función de correlación:
+```{r}
+cor(people$age, as.numeric(people$decile_score))
+```
+
+<!-- A continuación se exhiben algunos valores que muestran la correlación de diversos datos que pueden resultar de interés. Un valor de correlación se expresa como la forma de medir la dependencia entre dos variables (X,Y) y como es que una de ellas se comportaría al hacer variar la otra. De esta forma, mientras este valor esté muy cercano a 1, se dice que los datos están fuertemente correlacionados, su proporción es casi directa. Por otro lado, si se acerca mucho a -1 , quiere decir que los datos son demasiado correlacionados inversamente. Para valores cercanos a 0, se dice que la relación entre los datos es casi nula. Y no existe relación alguna si este valor es igual a 0. -->
 
 ```{r}
 compas_violence = merge(compas[compas$scale_id == 7, ], people, by.x = "person_id", by.y = "id")
 compas_recidivism = merge(compas[compas$scale_id == 8, ], people, by.x = "person_id", by.y = "id")
 compas_failure_appear = merge(compas[compas$scale_id == 18, ], people, by.x = "person_id", by.y = "id")
-
-cor(people$age, people$decile_score)
 ```
 
 Se separaron los puntajes de compas entre los tres distintos podibles: *Risk of Violence*, *Risk of Recidivism* y *Risk of Failure to Appear*. Luego se hizo uso de la función *cor* de R donde se analizó la correlación entre distintas variables, tales como: edad, sexo, raza o si ha sido reincidente con o sin violencia.
-
-Escribimos la ubicación del archivo compas.db
-Utilizamos los drivers instalados de SQLite para poder pasar el archivo a un data.frame que puede ser manipulado por R.
-```{r}
-filename <- "compas.db"
-sqlite.driver <- dbDriver("SQLite")
-db <- dbConnect(sqlite.driver,
-                dbname = filename)
-```
-
-El objeto db contiene las 7 tablas que pertenecen a compas.
-Para obtener un dataframe con alguna de las tablas, vasta con descomentar la linea que lee una tabla.
-
-```{r}
-dbListTables(db)
-# tabla_compas <- dbReadTable(db,"people")
-```
-
-
-Le damos nombres a los distintos dataframe
-1. People
-```{r}
-people <- dbReadTable(db,"people")
-head(people)
-```
-Vemos el tamaño del dataframe 
-```{r}
-# Para indicar el número de filas y columnas de d
-dim(people)
-```
-Atributos de dataframe
-```{r}
-str(people)
-```
-Estadisticas 
-```{r}
-summary(people)
-```
-# Consultas sobre data frames (proyección y filtro)
-Analizando algunos parametro del dataframe "people"
-```{r}
-people[order(people$age),]
-```
-# Graficando 
-Fitrar de acuerdo a las hombre con edad de 18 años, ver su raza y su puntaje 
-```{r}
-head(people[people$sex=="Female", c("race","decile_score")])
-```
-Fitrar de acuerdo a las mujeres, ver su raza y su puntaje 
-De acuerdo al grafico vemos una clara tendencia de raza afroamericana con mayor puntaje 
-```{r}
-peopleFemale <- people[people$sex == "Female", ]
-head(peopleFemale)
-library(ggplot2)
-ggplot(peopleFemale) +   # asociamos un data frame a ggplot
-  geom_bar(aes(x = race, y = decile_score), stat="identity") +   # creamos un grafico de barras como una capa
-  coord_flip() +  # transformamos el grafico invirtiendo los ejes de coordenadas (sólo visualmente)
-  ggtitle("Distribución de mujeres de acuerdo a su raza y su puntaje") + # título
-  xlab("Race") + ylab("Score")  
-```
-Se puede encontrar una correlación entre la raza y su puntaje, lo que nos muestra el grafico es que la raza African-American y Caucasian son maypritarias en las mujeres.
-```{r}
-peopleFemale <- people[people$sex == "Female", ]
-head(peopleFemale)
-library(ggplot2)
-ggplot(peopleFemale) +   # asociamos un data frame a ggplot
-  geom_bar(aes(x = race, y = is_violent_recid), stat="identity") +   # creamos un grafico de barras como una capa
-  coord_flip() +  # transformamos el grafico invirtiendo los ejes de coordenadas (sólo visualmente)
-  ggtitle("Distribución de mujeres de acuerdo a su raza y su indice violencia ") + # título
-  xlab("Race") + ylab("Violent")  
-```
-```{r}
-peopleAfromaerican <- people[people$race == "African-American", ]
-head(peopleAfromaerican)
-library(ggplot2)
-ggplot(peopleAfromaerican) +   # asociamos un data frame a ggplot
-  geom_bar(aes(x = age, y = decile_score), stat="identity") +   # creamos un grafico de barras como una capa
-  coord_flip() +  # transformamos el grafico invirtiendo los ejes de coordenadas (sólo visualmente)
-  ggtitle("Distribución de afroamericanos de acuerdo a su edad y puntaje") + # título
-  xlab("Age") + ylab("Score")  
-```
-Hay una correlación entre la edad y el puntaje para la raza African-American, donde podemos notar que a menor edad mayor puntaje, pero en una concentración.
-
-```{r}
-peopleAge <- people[people$age < "30", ]
-head(peopleAge)
-library(ggplot2)
-ggplot(peopleAge) +   # asociamos un data frame a ggplot
-  geom_bar(aes(x = sex, y = decile_score), stat="identity") +   # creamos un grafico de barras como una capa
-  coord_flip() +  # transformamos el grafico invirtiendo los ejes de coordenadas (sólo visualmente)
-  ggtitle("Distribución de personas menores de 30 años y puntaje") + # título
-  xlab("Sex") + ylab("Score")  
-```
-Este grafico nos muestra una correlacion entre las personas menores de 30 que su puntaje es mayor para el sexo masculino.
-Grafico densidad de edad
-Podemos ver que se concentran las edades mas jovenes
-Distribución de edad en la gente que ha sido encuestada
-```{r}
-plot(density(people$age))
-```
-Este grafico nos muestra la densidad de la edad de las personas y nos muestra una relacion de la concentracion de edad
-
-Grafico de densidad del puntaje del compas 
-```{r}
-plot(density(people$decile_score))
-```
-Este grafico nos muestra la densidad de puntaje de las personas y nos muestra la concentracion del puntaje siendo mayoritario entre 0 y 2
-Por ggplot
-
-2. Casearrest
-```{r}
-casearrest <- dbReadTable(db,"casearrest")
-head(casearrest)
-```
-Vemos el tamaño del dataframe
-```{r}
-# Para indicar el número de filas y columnas de d
-dim(casearrest)
-```
-
-3. charge
-```{r}
-charge <- dbReadTable(db,"charge")
-head(charge)
-```
-
-4. compas
-```{r}
-compas <- dbReadTable(db,"compas")
-head(compas)
-```
-```{r}
-peopleAge <- compas
-library(ggplot2)
-ggplot(compas) +   # asociamos un data frame a ggplot
-  geom_bar(aes(x = marital_status, y = decile_score), stat="identity") +   # creamos un grafico de barras como una capa
-  coord_flip() +  # transformamos el grafico invirtiendo los ejes de coordenadas (sólo visualmente)
-  ggtitle("Distribución de estado civil y puntaje") + # título
-  xlab("Estado civil") + ylab("Score")  
-```
-```{r}
-peopleAge <- compas
-library(ggplot2)
-ggplot(compas) +   # asociamos un data frame a ggplot
-  geom_bar(aes(x = type_of_assessment, y = decile_score), stat="identity") +   # creamos un grafico de barras como una capa
-  coord_flip() +  # transformamos el grafico invirtiendo los ejes de coordenadas (sólo visualmente)
-  ggtitle("Distribución de tipificacion de evaluación y puntaje") + # título
-  xlab("Tipificación de la evaluación") + ylab("Score")  
-```
-```{r}
-peopleAge <- compas
-library(ggplot2)
-ggplot(compas) +   # asociamos un data frame a ggplot
-  geom_bar(aes(x = score_text, y = decile_score), stat="identity") +   # creamos un grafico de barras como una capa
-  coord_flip() +  # transformamos el grafico invirtiendo los ejes de coordenadas (sólo visualmente)
-  ggtitle("Relación de la tipificacion del puntaje y el puntaje") + # título
-  xlab("Tipificación score") + ylab("Score")  
-```
-5. jailhistory
-```{r}
-jailhistory <- dbReadTable(db,"jailhistory")
-head(jailhistory)
-```
-6. prisonhistory
-```{r}
-prisonhistory <- dbReadTable(db,"prisonhistory")
-head(prisonhistory)
-```
-7. summary
-```{r}
-summary <- dbReadTable(db,"summary")
-head(summary)
-```
-
-
-Realizamos exploración de datos 
-Numero de filas
-```{r}
-# Para indicar el número de filas de d.
-nrow(db)
-```
