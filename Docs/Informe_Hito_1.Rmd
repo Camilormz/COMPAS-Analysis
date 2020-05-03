@@ -3,7 +3,7 @@ title: "Análisis de COMPAS como predictor sesgado"
 output: html_notebook
 ---
 
-**Ignacia Aguilera, Camilo Ramírez, Sebastián Zapata** - ***Grupo 16***<br>
+**Ignacia Aguilera, Camilo Ramírez** - ***Grupo 16***<br>
 Curso CC5206 Introducción a la Minería de Datos<br>
 Profesores: Felipe Bravo, Bárbara Poblete<br>
 Facultad de Ciencias Físicas y Matemáticas, Universidad de Chile
